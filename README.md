@@ -112,88 +112,91 @@ ml-geometry/
 
 ### Custom CNN Architecture
 
-```
-Input (224x224x3)
-    ↓
-Conv2D (7x7, 64 filters, stride=2) + BatchNorm + ReLU
-    ↓
-MaxPooling2D (3x3, stride=2)
-    ↓
-┌─────────────────────────────────────┐
-│ Stage 1: ResNet Block x2 (64)      │
-│  - Conv2D (3x3, 64)                │
-│  - BatchNorm + ReLU                │
-│  - Conv2D (3x3, 64)                │
-│  - BatchNorm                       │
-│  - Skip Connection                 │
-│  - ReLU + Dropout                  │
-│ Channel Attention (SE-Net style)   │
-└─────────────────────────────────────┘
-    ↓
-┌─────────────────────────────────────┐
-│ Stage 2: ResNet Block x3 (128)     │
-│  - Downsample (stride=2)           │
-│  - Conv blocks with skip           │
-│ Channel Attention                  │
-└─────────────────────────────────────┘
-    ↓
-┌─────────────────────────────────────┐
-│ Stage 3: ResNet Block x4 (256)     │
-│  - Downsample (stride=2)           │
-│  - Conv blocks with skip           │
-│ Channel Attention                  │
-└─────────────────────────────────────┘
-    ↓
-┌─────────────────────────────────────┐
-│ Stage 4: ResNet Block x3 (512)     │
-│  - Downsample (stride=2)           │
-│  - Conv blocks with skip           │
-│ Channel Attention                  │
-└─────────────────────────────────────┘
-    ↓
-Global Average Pooling
-    ↓
-Dense (512) + ReLU + Dropout(0.3)
-    ↓
-Dense (256) + ReLU + Dropout(0.15)
-    ↓
-Dense (num_classes) + Softmax
-    ↓
-Output (10 classes)
-```
+The model follows a hierarchical structure with four main stages:
 
-### Key Components
+**Input Layer**
+- Input shape: 224x224x3 (RGB images)
 
-**ResNet Blocks**
-- Residual connections for gradient flow
-- 3x3 convolutional kernels
-- Batch Normalization after each convolution
-- ReLU activation
+**Initial Convolution**
+- Conv2D: 7x7 kernel, 64 filters, stride 2
+- Batch Normalization + ReLU activation
+- MaxPooling: 3x3, stride 2
+
+**Stage 1** (Output: 56x56x64)
+- 2x ResNet blocks with 64 filters
+- Channel Attention mechanism
+- Skip connections for residual learning
+
+**Stage 2** (Output: 28x28x128)
+- 3x ResNet blocks with 128 filters
+- Downsampling via stride 2
+- Channel Attention mechanism
+
+**Stage 3** (Output: 14x14x256)
+- 4x ResNet blocks with 256 filters
+- Downsampling via stride 2
+- Channel Attention mechanism
+
+**Stage 4** (Output: 7x7x512)
+- 3x ResNet blocks with 512 filters
+- Downsampling via stride 2
+- Channel Attention mechanism
+
+**Classification Head**
+- Global Average Pooling
+- Dense layer: 512 units + ReLU + Dropout (0.3)
+- Dense layer: 256 units + ReLU + Dropout (0.15)
+- Output layer: 10 units + Softmax
+
+### ResNet Block Structure
+
+Each ResNet block contains:
+- Conv2D (3x3) + BatchNorm + ReLU
+- Conv2D (3x3) + BatchNorm
+- Skip connection (identity or 1x1 conv for dimension matching)
+- Addition + ReLU + Dropout
 - L2 regularization (1e-4)
 
-**Attention Mechanism**
-- Channel attention (Squeeze-Excitation)
-- Reduction ratio: 16
-- Global average pooling for squeeze
-- Two fully connected layers for excitation
+### Channel Attention (SE-Net)
 
-**Regularization**
-- Dropout: 0.3 in ResNet blocks, reduced in classification head
-- L2 weight decay: 1e-4
-- Batch Normalization for internal covariate shift
+- Global Average Pooling across spatial dimensions
+- Dense layer with reduction (filters / 16)
+- ReLU activation
+- Dense layer to original filter size
+- Sigmoid activation
+- Element-wise multiplication with input
+
+### Regularization Techniques
+
+- **Dropout**: 0.3 in residual blocks, 0.15 in classification head
+- **L2 Weight Decay**: 1e-4 on all convolutional and dense layers
+- **Batch Normalization**: After each convolution for training stability
+- **Data Augmentation**: Rotation, shifts, flips, zoom, brightness, contrast
 
 ### Transfer Learning Models
 
 Available pretrained architectures:
-- **EfficientNet B0/B3**: Compound scaling, efficient architecture
-- **ResNet50/101**: Deep residual networks
-- **MobileNetV2/V3**: Lightweight, mobile-optimized
 
-All transfer learning models use:
-- Pretrained ImageNet weights
-- Frozen base layers initially
-- Custom classification head (512 → 256 → num_classes)
-- Fine-tuning capability for last N layers
+**EfficientNet B0/B3**
+- Compound scaling method (depth, width, resolution)
+- Mobile inverted bottleneck convolutions
+- Optimal efficiency-accuracy tradeoff
+
+**ResNet50/101**
+- Deep residual learning framework
+- 50/101 layers with skip connections
+- Proven performance on ImageNet
+
+**MobileNetV2/V3**
+- Depthwise separable convolutions
+- Inverted residuals with linear bottlenecks
+- Optimized for mobile and embedded devices
+
+All transfer learning models include:
+- Pretrained ImageNet weights (1000 classes)
+- Custom classification head: 512 → 256 → num_classes
+- Batch Normalization in classification head
+- Optional fine-tuning of last N layers
 
 ## Project Structure
 
