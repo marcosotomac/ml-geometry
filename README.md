@@ -1,21 +1,29 @@
-# ML Geometry Detector
+# ML Geometry Detector - Production MLOps System
 
-Advanced Machine Learning system for detection and classification of geometric shapes in images using Deep Learning architectures.
+Advanced Machine Learning system with complete MLOps pipeline for detection and classification of geometric shapes using Deep Learning architectures.
 
 ## Features
 
-- **Synthetic Dataset Generation**: Automated creation of training datasets with geometric shapes
-- **Custom CNN Architecture**: Convolutional neural network with ResNet blocks and skip connections
-- **Transfer Learning Support**: Integration with EfficientNet, ResNet50, and MobileNetV2 pretrained models
-- **Advanced Data Augmentation**: Sophisticated transformations for improved model generalization
-- **Robust Training Pipeline**: Early stopping, learning rate scheduling, and custom callbacks
-- **Comprehensive Evaluation**: Confusion matrices, ROC curves, and detailed visualizations
-- **REST API**: FastAPI server for real-time predictions
-- **Multi-Object Detection**: Capability to detect multiple shapes in single images
+### Core ML Capabilities
+- **Synthetic Dataset Generation**: Automated creation of training datasets with 10 geometric shapes
+- **Custom CNN Architecture**: Convolutional neural network with ResNet blocks and SE-Net attention
+- **Transfer Learning Support**: EfficientNet, ResNet, MobileNet pretrained models
+- **Advanced Data Augmentation**: Albumentations pipeline for robust generalization
+- **Multi-Object Detection**: Sliding window, region proposals, contour detection methods
+- **REST API**: FastAPI server for real-time predictions with batch support
 
-## Installation
+### MLOps Production Features
+- **Model Registry**: Version control and lifecycle management (development → staging → production)
+- **Experiment Tracking**: MLflow integration for tracking all training runs
+- **Model Monitoring**: Prometheus metrics, drift detection, performance tracking
+- **CI/CD Pipeline**: GitHub Actions for automated testing, building, and deployment
+- **Containerization**: Docker and Docker Compose for reproducible environments
+- **Orchestration**: Kubernetes deployment with horizontal pod autoscaling
+- **Observability**: Grafana dashboards for real-time monitoring
 
-## Installation
+## Quick Start
+
+### Basic Installation
 
 ```bash
 # Clone repository
@@ -29,6 +37,28 @@ source venv/bin/activate  # Windows: venv\Scripts\activate
 # Install dependencies
 pip install -r requirements.txt
 ```
+
+### MLOps Setup
+
+```bash
+# Install MLOps dependencies
+pip install -r requirements-mlops.txt
+
+# Start MLOps stack with Docker
+docker-compose up -d
+
+# Access services:
+# - API: http://localhost:8000
+# - MLflow: http://localhost:5000
+# - Prometheus: http://localhost:9090
+# - Grafana: http://localhost:3000
+```
+
+## Documentation
+
+- **[MLOps Guide](MLOPS.md)**: Complete MLOps implementation guide
+- **[Quick Start](QUICKSTART.md)**: Getting started tutorial
+- **[API Documentation](http://localhost:8000/docs)**: Interactive API documentation
 
 ## Supported Shapes
 
@@ -44,6 +74,37 @@ pip install -r requirements.txt
 - Ellipse
 
 ## Usage
+
+### Training with MLOps
+
+```bash
+# Train with experiment tracking and model registry
+python train_mlops.py \
+  --model-type custom \
+  --experiment-name ml-geometry \
+  --register-model \
+  --model-version 1.0.0 \
+  --stage development
+```
+
+### Model Deployment Pipeline
+
+```bash
+# 1. Promote to staging
+python deploy_model.py \
+  --model-name custom \
+  --version 1.0.0 \
+  --source-stage development
+
+# 2. Deploy to production
+python deploy_model.py \
+  --model-name custom \
+  --version 1.0.0 \
+  --source-stage staging
+
+# 3. Deploy to Kubernetes
+kubectl apply -f k8s/deployment.yaml
+```
 
 ### Dataset Generation
 ```python

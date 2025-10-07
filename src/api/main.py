@@ -3,8 +3,9 @@ FastAPI REST API for geometric shape detection
 """
 
 from src.evaluation.predictor import ShapePredictor
+from src.mlops.model_monitor import ModelMonitor
 from fastapi import FastAPI, File, UploadFile, HTTPException
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, Response
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from typing import List, Optional, Dict
@@ -13,6 +14,7 @@ from PIL import Image
 import io
 import os
 import sys
+import time
 
 # Add parent directory to path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
@@ -46,6 +48,27 @@ app = FastAPI(
     title="Geometric Shape Detection API",
     description="Advanced ML API for detecting geometric shapes in images",
     version="1.0.0",
+    docs_url="/docs",
+    redoc_url="/redoc"
+)
+
+# Add CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Initialize predictor
+predictor = ShapePredictor(
+    model_path=os.getenv('MODEL_PATH', 'models/saved_models/best_model.h5'),
+    config_path=os.getenv('CONFIG_PATH', 'models/saved_models/model_config.json')
+)
+
+# Initialize monitor
+monitor = ModelMonitor(model_name='ml-geometry')
     docs_url="/docs",
     redoc_url="/redoc"
 )
@@ -117,48 +140,42 @@ async def health_check():
     )
 
 
-@app.post("/predict", response_model=PredictionResponse, tags=["Prediction"])
-async def predict_image(
-    file: UploadFile = File(...),
-    return_probabilities: bool = False
-):
+@app.post("/predict")
+async def predict_shape(file: UploadFile = File(...)):
     """
-    Predict geometric shape in uploaded image
-
-    Args:
-        file: Image file (PNG, JPG, JPEG)
-        return_probabilities: Whether to return probabilities for all classes
+    Predict the geometric shape in an uploaded image.
 
     Returns:
-        Prediction results
+        dict: Prediction results including class name, confidence, and probabilities
     """
-    if predictor is None:
-        raise HTTPException(status_code=503, detail="Model not loaded")
-
-    # Validate file type
-    if not file.content_type.startswith('image/'):
-        raise HTTPException(status_code=400, detail="File must be an image")
-
+    start_time = time.time()
+    
     try:
-        # Read image
+        # Read and process the uploaded image
         contents = await file.read()
         image = Image.open(io.BytesIO(contents))
 
-        # Make prediction
-        result = predictor.predict(
-            image, return_probabilities=return_probabilities)
+        # Convert to numpy array
+        image_np = np.array(image)
 
-        return PredictionResponse(
-            class_name=result.get('class', f"Class {result['class_idx']}"),
-            class_idx=result['class_idx'],
+        # Get prediction
+        result = predictor.predict_image(image_np)
+        
+        # Calculate latency
+        latency = time.time() - start_time
+        
+        # Log to monitor
+        monitor.log_prediction(
+            predicted_class=result['class_name'],
             confidence=result['confidence'],
-            probabilities=result.get(
-                'probabilities') if return_probabilities else None
+            latency=latency
         )
 
+        return JSONResponse(content=result)
+
     except Exception as e:
-        raise HTTPException(
-            status_code=500, detail=f"Prediction failed: {str(e)}")
+        monitor.log_error('prediction_error', str(e))
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @app.post("/predict/batch", response_model=BatchPredictionResponse, tags=["Prediction"])

@@ -1,0 +1,78 @@
+version: '3.8'
+
+services:
+  api:
+    build: .
+    container_name: ml-geometry-api
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./models:/app/models:ro
+      - ./configs:/app/configs:ro
+    environment:
+      - MODEL_PATH=/app/models/saved_models/best_model.h5
+      - CONFIG_PATH=/app/models/saved_models/model_config.json
+      - LOG_LEVEL=info
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - ml-geometry-network
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: ml-geometry-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus-data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+    restart: unless-stopped
+    networks:
+      - ml-geometry-network
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: ml-geometry-grafana
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards
+      - ./monitoring/grafana/datasources:/etc/grafana/provisioning/datasources
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+    restart: unless-stopped
+    networks:
+      - ml-geometry-network
+    depends_on:
+      - prometheus
+
+  mlflow:
+    image: ghcr.io/mlflow/mlflow:latest
+    container_name: ml-geometry-mlflow
+    ports:
+      - "5000:5000"
+    volumes:
+      - mlflow-data:/mlflow
+    command: mlflow server --backend-store-uri sqlite:///mlflow/mlflow.db --default-artifact-root /mlflow/artifacts --host 0.0.0.0
+    restart: unless-stopped
+    networks:
+      - ml-geometry-network
+
+networks:
+  ml-geometry-network:
+    driver: bridge
+
+volumes:
+  prometheus-data:
+  grafana-data:
+  mlflow-data:
