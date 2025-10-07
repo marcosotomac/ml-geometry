@@ -94,152 +94,153 @@ Access interactive documentation at http://localhost:8000/docs
 
 ### Complete ML Pipeline
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                    1. DATA GENERATION                           │
-│                                                                 │
-│  GeometricShapeGenerator                                        │
-│         │                                                       │
-│         ├─> Generate 10 shape classes                          │
-│         ├─> Apply augmentation (rotation, flip, noise, etc.)   │
-│         └─> Split: Train (70%) / Val (15%) / Test (15%)       │
-│                                                                 │
-│  Output: data/synthetic/                                        │
-│         ├── train/ (7000 images)                               │
-│         ├── val/ (1500 images)                                 │
-│         └── test/ (1500 images)                                │
-└─────────────────────────────────────────────────────────────────┘
-                            ↓
-┌─────────────────────────────────────────────────────────────────┐
-│                    2. DATA LOADING                              │
-│                                                                 │
-│  DataLoader                                                     │
-│         │                                                       │
-│         ├─> Load images from directories                       │
-│         ├─> Normalize (0-1 range)                             │
-│         ├─> Apply runtime augmentation (train only)            │
-│         └─> Create batches (default: 32)                       │
-└─────────────────────────────────────────────────────────────────┘
-                            ↓
-┌─────────────────────────────────────────────────────────────────┐
-│                    3. MODEL CREATION                            │
-│                                                                 │
-│  Choose Architecture:                                           │
-│         │                                                       │
-│         ├─> Custom CNN (ResNet blocks + Attention)             │
-│         ├─> Lightweight CNN (Fast training)                    │
-│         └─> Transfer Learning (EfficientNet, ResNet, etc.)     │
-│                                                                 │
-│  Model Components:                                              │
-│         ├─> Input: 224x224x3                                   │
-│         ├─> Feature Extraction: Conv layers + ResNet blocks    │
-│         ├─> Attention: Channel attention mechanism             │
-│         ├─> Pooling: Global Average Pooling                    │
-│         └─> Classification: Dense layers → Softmax (10 classes)│
-└─────────────────────────────────────────────────────────────────┘
-                            ↓
-┌─────────────────────────────────────────────────────────────────┐
-│                    4. TRAINING                                  │
-│                                                                 │
-│  Training Pipeline:                                             │
-│         │                                                       │
-│         ├─> Optimizer: Adam/SGD/RMSprop                        │
-│         ├─> Loss: Categorical Cross-Entropy                    │
-│         ├─> Metrics: Accuracy, Precision, Recall, Top-3        │
-│         │                                                       │
-│         ├─> Callbacks:                                         │
-│         │   ├─> Early Stopping (patience: 15)                 │
-│         │   ├─> Model Checkpoint (save best)                  │
-│         │   ├─> ReduceLROnPlateau (factor: 0.5)               │
-│         │   ├─> TensorBoard (visualization)                   │
-│         │   └─> CSV Logger (metrics history)                  │
-│         │                                                       │
-│         └─> Train for N epochs (default: 50-100)               │
-│                                                                 │
-│  Output: models/saved_models/                                   │
-│         ├── best_model.h5                                      │
-│         ├── model_config.json                                  │
-│         └── training_history.json                              │
-└─────────────────────────────────────────────────────────────────┘
-                            ↓
-┌─────────────────────────────────────────────────────────────────┐
-│                    5. EVALUATION                                │
-│                                                                 │
-│  ModelEvaluator:                                                │
-│         │                                                       │
-│         ├─> Generate predictions on test set                   │
-│         ├─> Calculate metrics:                                 │
-│         │   ├─> Overall accuracy                               │
-│         │   ├─> Per-class accuracy                             │
-│         │   ├─> Precision, Recall, F1-score                    │
-│         │   └─> Confusion matrix                               │
-│         │                                                       │
-│         └─> Create visualizations:                             │
-│             ├─> Confusion matrix heatmap                       │
-│             ├─> ROC curves (multi-class)                       │
-│             ├─> Precision-Recall curves                        │
-│             ├─> Training history plots                         │
-│             └─> Sample predictions with confidence             │
-│                                                                 │
-│  Output: results/                                               │
-│         ├── evaluation_results.json                            │
-│         ├── confusion_matrix.png                               │
-│         ├── roc_curves.png                                     │
-│         └── sample_predictions.png                             │
-└─────────────────────────────────────────────────────────────────┘
-                            ↓
-┌─────────────────────────────────────────────────────────────────┐
-│                    6. DEPLOYMENT                                │
-│                                                                 │
-│  Option A: Direct Prediction                                    │
-│         │                                                       │
-│         └─> ShapePredictor.predict(image)                      │
-│             └─> Returns: {class, confidence, probabilities}    │
-│                                                                 │
-│  Option B: REST API                                             │
-│         │                                                       │
-│         ├─> FastAPI Server (port 8000)                         │
-│         ├─> Endpoints:                                         │
-│         │   ├─> POST /predict (single image)                  │
-│         │   ├─> POST /predict/batch (multiple images)         │
-│         │   ├─> GET /classes (available classes)              │
-│         │   └─> GET /health (API status)                      │
-│         └─> Returns: JSON with predictions                     │
-│                                                                 │
-│  Option C: Multi-Object Detection                               │
-│         │                                                       │
-│         └─> MultiShapeDetector                                 │
-│             ├─> Method 1: Sliding Window                       │
-│             ├─> Method 2: Region Proposals (Selective Search)  │
-│             └─> Method 3: Contour Detection                    │
-│             └─> Returns: List of {class, bbox, confidence}     │
-└─────────────────────────────────────────────────────────────────┘
+```mermaid
+graph TB
+    Start([Start]) --> DataGen[Data Generation]
+    
+    subgraph "1. Dataset Creation"
+        DataGen --> GenShapes[Generate 10 Shape Classes<br/>1000 samples per class]
+        GenShapes --> Augment[Apply Augmentation<br/>Rotation, Flip, Noise, etc.]
+        Augment --> Split[Train/Val/Test Split<br/>70% / 15% / 15%]
+        Split --> SaveData[(data/synthetic/)]
+    end
+    
+    SaveData --> DataLoad[Data Loading]
+    
+    subgraph "2. Data Preprocessing"
+        DataLoad --> Normalize[Normalize Images<br/>0-1 range]
+        Normalize --> Batch[Create Batches<br/>Default: 32]
+        Batch --> RuntimeAug[Runtime Augmentation<br/>Train only]
+    end
+    
+    RuntimeAug --> ModelChoice{Choose Architecture}
+    
+    subgraph "3. Model Creation"
+        ModelChoice -->|Option 1| CustomCNN[Custom CNN<br/>ResNet + Attention]
+        ModelChoice -->|Option 2| LightCNN[Lightweight CNN<br/>Fast Training]
+        ModelChoice -->|Option 3| Transfer[Transfer Learning<br/>EfficientNet/ResNet]
+        
+        CustomCNN --> ModelBuild[Build Model<br/>Input: 224x224x3<br/>Output: 10 classes]
+        LightCNN --> ModelBuild
+        Transfer --> ModelBuild
+    end
+    
+    ModelBuild --> Train[Training Pipeline]
+    
+    subgraph "4. Training"
+        Train --> Compile[Compile Model<br/>Optimizer: Adam/SGD<br/>Loss: CrossEntropy]
+        Compile --> Callbacks[Setup Callbacks<br/>Early Stop, Checkpoint<br/>LR Scheduler, TensorBoard]
+        Callbacks --> Epochs[Train Epochs<br/>50-100 iterations]
+        Epochs --> SaveModel[(Save Model<br/>models/saved_models/)]
+    end
+    
+    SaveModel --> Eval[Evaluation]
+    
+    subgraph "5. Evaluation"
+        Eval --> Predict[Generate Predictions<br/>Test Set]
+        Predict --> Metrics[Calculate Metrics<br/>Accuracy, Precision<br/>Recall, F1-Score]
+        Metrics --> Viz[Create Visualizations<br/>Confusion Matrix<br/>ROC Curves]
+        Viz --> SaveResults[(results/)]
+    end
+    
+    SaveResults --> Deploy{Deployment Option}
+    
+    subgraph "6. Deployment"
+        Deploy -->|Option A| DirectPred[Direct Prediction<br/>ShapePredictor]
+        Deploy -->|Option B| API[REST API<br/>FastAPI Server]
+        Deploy -->|Option C| MultiDet[Multi-Object Detection<br/>Sliding Window/Contours]
+        
+        DirectPred --> Output[/Output: Class + Confidence/]
+        API --> Output
+        MultiDet --> Output
+    end
+    
+    Output --> End([End])
+    
+    style Start fill:#4CAF50,stroke:#2E7D32,color:#fff
+    style End fill:#4CAF50,stroke:#2E7D32,color:#fff
+    style SaveData fill:#2196F3,stroke:#1565C0,color:#fff
+    style SaveModel fill:#2196F3,stroke:#1565C0,color:#fff
+    style SaveResults fill:#2196F3,stroke:#1565C0,color:#fff
+    style Output fill:#FF9800,stroke:#E65100,color:#fff
 ```
 
 ### Inference Flow
 
+```mermaid
+graph LR
+    A[Input Image<br/>Any Size] --> B[Preprocessing]
+    
+    subgraph Preprocessing
+        B --> B1[Resize to 224x224]
+        B1 --> B2[Normalize 0-1]
+        B2 --> B3[Convert to Tensor]
+    end
+    
+    B3 --> C[Model Forward Pass]
+    
+    subgraph "Model Inference"
+        C --> C1[Feature Extraction<br/>Conv Layers]
+        C1 --> C2[Channel Attention<br/>SE-Net]
+        C2 --> C3[Classification Head<br/>Dense + Softmax]
+    end
+    
+    C3 --> D[Post-processing]
+    
+    subgraph "Output Processing"
+        D --> D1[Apply Softmax]
+        D1 --> D2[Get ArgMax<br/>Predicted Class]
+        D2 --> D3[Extract Confidence]
+    end
+    
+    D3 --> E[/Output<br/>Class Name<br/>Confidence Score<br/>All Probabilities/]
+    
+    style A fill:#4CAF50,stroke:#2E7D32,color:#fff
+    style E fill:#FF9800,stroke:#E65100,color:#fff
 ```
-Input Image (any size)
-        ↓
-Preprocessing
-    ├─> Resize to 224x224
-    ├─> Normalize (0-1)
-    └─> Convert to tensor
-        ↓
-Model Forward Pass
-    ├─> Feature extraction
-    ├─> Channel attention
-    └─> Classification head
-        ↓
-Post-processing
-    ├─> Softmax activation
-    ├─> Get argmax (predicted class)
-    └─> Extract confidence scores
-        ↓
-Output
-    ├─> Class name (e.g., "circle")
-    ├─> Confidence (0.0-1.0)
-    └─> All probabilities (optional)
+
+### Multi-Object Detection Pipeline
+
+```mermaid
+graph TB
+    Input[Input Image] --> Method{Detection Method}
+    
+    Method -->|Method 1| SW[Sliding Window]
+    Method -->|Method 2| RP[Region Proposals<br/>Selective Search]
+    Method -->|Method 3| CD[Contour Detection]
+    
+    subgraph "Sliding Window"
+        SW --> SW1[Slide 224x224 window<br/>Stride: 56px]
+        SW1 --> SW2[Classify each window]
+        SW2 --> SW3[Filter by confidence]
+    end
+    
+    subgraph "Region Proposals"
+        RP --> RP1[Generate proposals<br/>Selective Search]
+        RP1 --> RP2[Resize regions to 224x224]
+        RP2 --> RP3[Classify each region]
+        RP3 --> RP4[Filter by confidence]
+    end
+    
+    subgraph "Contour Detection"
+        CD --> CD1[Convert to grayscale]
+        CD1 --> CD2[Apply threshold]
+        CD2 --> CD3[Find contours]
+        CD3 --> CD4[Extract bounding boxes]
+        CD4 --> CD5[Classify each region]
+        CD5 --> CD6[Filter by confidence]
+    end
+    
+    SW3 --> NMS[Non-Maximum Suppression<br/>IoU threshold: 0.3]
+    RP4 --> NMS
+    CD6 --> NMS
+    
+    NMS --> Visual[Visualize Detections<br/>Draw bboxes + labels]
+    Visual --> Output[/Output:<br/>List of detections<br/>bbox, class, confidence/]
+    
+    style Input fill:#4CAF50,stroke:#2E7D32,color:#fff
+    style Output fill:#FF9800,stroke:#E65100,color:#fff
+    style NMS fill:#9C27B0,stroke:#6A1B9A,color:#fff
 ```
 
 ## Model Architecture
