@@ -110,12 +110,90 @@ ml-geometry/
 └── configs/             # Archivos de configuración
 ## Model Architecture
 
-The custom CNN architecture includes:
-- ResNet blocks with skip connections
-- Batch Normalization layers for training stability
-- Dropout regularization
-- Global Average Pooling
-- Dense layers with softmax activation
+### Custom CNN Architecture
+
+```
+Input (224x224x3)
+    ↓
+Conv2D (7x7, 64 filters, stride=2) + BatchNorm + ReLU
+    ↓
+MaxPooling2D (3x3, stride=2)
+    ↓
+┌─────────────────────────────────────┐
+│ Stage 1: ResNet Block x2 (64)      │
+│  - Conv2D (3x3, 64)                │
+│  - BatchNorm + ReLU                │
+│  - Conv2D (3x3, 64)                │
+│  - BatchNorm                       │
+│  - Skip Connection                 │
+│  - ReLU + Dropout                  │
+│ Channel Attention (SE-Net style)   │
+└─────────────────────────────────────┘
+    ↓
+┌─────────────────────────────────────┐
+│ Stage 2: ResNet Block x3 (128)     │
+│  - Downsample (stride=2)           │
+│  - Conv blocks with skip           │
+│ Channel Attention                  │
+└─────────────────────────────────────┘
+    ↓
+┌─────────────────────────────────────┐
+│ Stage 3: ResNet Block x4 (256)     │
+│  - Downsample (stride=2)           │
+│  - Conv blocks with skip           │
+│ Channel Attention                  │
+└─────────────────────────────────────┘
+    ↓
+┌─────────────────────────────────────┐
+│ Stage 4: ResNet Block x3 (512)     │
+│  - Downsample (stride=2)           │
+│  - Conv blocks with skip           │
+│ Channel Attention                  │
+└─────────────────────────────────────┘
+    ↓
+Global Average Pooling
+    ↓
+Dense (512) + ReLU + Dropout(0.3)
+    ↓
+Dense (256) + ReLU + Dropout(0.15)
+    ↓
+Dense (num_classes) + Softmax
+    ↓
+Output (10 classes)
+```
+
+### Key Components
+
+**ResNet Blocks**
+- Residual connections for gradient flow
+- 3x3 convolutional kernels
+- Batch Normalization after each convolution
+- ReLU activation
+- L2 regularization (1e-4)
+
+**Attention Mechanism**
+- Channel attention (Squeeze-Excitation)
+- Reduction ratio: 16
+- Global average pooling for squeeze
+- Two fully connected layers for excitation
+
+**Regularization**
+- Dropout: 0.3 in ResNet blocks, reduced in classification head
+- L2 weight decay: 1e-4
+- Batch Normalization for internal covariate shift
+
+### Transfer Learning Models
+
+Available pretrained architectures:
+- **EfficientNet B0/B3**: Compound scaling, efficient architecture
+- **ResNet50/101**: Deep residual networks
+- **MobileNetV2/V3**: Lightweight, mobile-optimized
+
+All transfer learning models use:
+- Pretrained ImageNet weights
+- Frozen base layers initially
+- Custom classification head (512 → 256 → num_classes)
+- Fine-tuning capability for last N layers
 
 ## Project Structure
 
