@@ -1,49 +1,57 @@
-# ML Geometry Detector 🔺🔴⬜
+# ML Geometry Detector
 
-Un modelo avanzado de Machine Learning para detectar y clasificar figuras geométricas en imágenes usando Deep Learning.
+Advanced Machine Learning system for detection and classification of geometric shapes in images using Deep Learning architectures.
 
-## 🚀 Características
+## Features
 
-- **Generación de Dataset Sintético**: Crea automáticamente datasets de entrenamiento con figuras geométricas
-- **Arquitectura CNN Personalizada**: Red neuronal convolucional con ResNet blocks y skip connections
-- **Transfer Learning**: Soporte para EfficientNet, ResNet50, y MobileNetV2
-- **Data Augmentation Avanzado**: Transformaciones sofisticadas para mejorar generalización
-- **Pipeline de Entrenamiento Robusto**: Early stopping, learning rate scheduling, y callbacks personalizados
-- **Evaluación Completa**: Matrices de confusión, curvas ROC, y visualizaciones detalladas
-- **API REST**: Servidor FastAPI para predicciones en tiempo real
-- **Detección Multi-Objeto**: Capacidad de detectar múltiples figuras en una imagen
+- **Synthetic Dataset Generation**: Automated creation of training datasets with geometric shapes
+- **Custom CNN Architecture**: Convolutional neural network with ResNet blocks and skip connections
+- **Transfer Learning Support**: Integration with EfficientNet, ResNet50, and MobileNetV2 pretrained models
+- **Advanced Data Augmentation**: Sophisticated transformations for improved model generalization
+- **Robust Training Pipeline**: Early stopping, learning rate scheduling, and custom callbacks
+- **Comprehensive Evaluation**: Confusion matrices, ROC curves, and detailed visualizations
+- **REST API**: FastAPI server for real-time predictions
+- **Multi-Object Detection**: Capability to detect multiple shapes in single images
 
-## 📦 Instalación
+## Installation
+
+## Installation
 
 ```bash
-# Clonar repositorio
+# Clone repository
 git clone https://github.com/marcosotomac/ml-geometry.git
 cd ml-geometry
 
-# Crear entorno virtual
+# Create virtual environment
 python -m venv venv
-source venv/bin/activate  # En Windows: venv\Scripts\activate
+source venv/bin/activate  # Windows: venv\Scripts\activate
 
-# Instalar dependencias
+# Install dependencies
 pip install -r requirements.txt
 ```
 
-## 🎯 Figuras Soportadas
+## Supported Shapes
 
-- Círculo
-- Cuadrado
-- Rectángulo
-- Triángulo
-- Pentágono
-- Hexágono
-- Octágono
-- Estrella
-- Rombo
-- Elipse
+- Circle
+- Square
+- Rectangle
+- Triangle
+- Pentagon
+- Hexagon
+- Octagon
+- Star
+- Rhombus
+- Ellipse
 
-## 🔧 Uso Rápido
+## Usage
 
-### Generar Dataset
+### Dataset Generation
+```python
+from src.data.dataset_generator import GeometricShapeGenerator
+
+generator = GeometricShapeGenerator(img_size=224, shapes_per_class=1000)
+### Dataset Generation
+
 ```python
 from src.data.dataset_generator import GeometricShapeGenerator
 
@@ -51,7 +59,8 @@ generator = GeometricShapeGenerator(img_size=224, shapes_per_class=1000)
 generator.generate_dataset('data/synthetic')
 ```
 
-### Entrenar Modelo
+### Model Training
+
 ```python
 from src.models.train import train_model
 
@@ -63,30 +72,25 @@ train_model(
 )
 ```
 
-### Hacer Predicciones
+### Predictions
+
 ```python
 from src.models.predictor import ShapePredictor
 
 predictor = ShapePredictor('models/best_model.h5')
 prediction = predictor.predict('path/to/image.jpg')
-print(f"Forma detectada: {prediction['class']} (confianza: {prediction['confidence']:.2%})")
+print(f"Shape: {prediction['class']}, Confidence: {prediction['confidence']:.2%}")
 ```
 
-### Iniciar API
+### API Server
+
 ```bash
 python src/api/main.py
 ```
 
-## 📊 Arquitectura del Modelo
+Access interactive documentation at http://localhost:8000/docs
 
-El modelo utiliza una arquitectura CNN personalizada con:
-- Bloques ResNet con skip connections
-- Batch Normalization para estabilidad
-- Dropout para regularización
-- Global Average Pooling
-- Capas densas con activación softmax
-
-## 📁 Estructura del Proyecto
+## Model Architecture
 
 ```
 ml-geometry/
@@ -104,20 +108,83 @@ ml-geometry/
 ├── notebooks/           # Jupyter notebooks para experimentación
 ├── tests/               # Tests unitarios
 └── configs/             # Archivos de configuración
+## Model Architecture
+
+The custom CNN architecture includes:
+- ResNet blocks with skip connections
+- Batch Normalization layers for training stability
+- Dropout regularization
+- Global Average Pooling
+- Dense layers with softmax activation
+
+## Project Structure
+
+```
+ml-geometry/
+├── data/
+│   ├── synthetic/       # Generated dataset
+│   └── real/            # Real images (optional)
+├── models/
+│   ├── saved_models/    # Trained models
+│   └── checkpoints/     # Training checkpoints
+├── src/
+│   ├── data/            # Data generation and processing
+│   ├── models/          # Model architectures and training
+│   ├── evaluation/      # Metrics and visualizations
+│   └── api/             # REST API
+├── notebooks/           # Jupyter notebooks
+├── tests/               # Unit tests
+└── configs/             # Configuration files
 ```
 
-## 📈 Resultados
+## Performance Metrics
 
-(Se actualizará con métricas de rendimiento)
+Expected performance with default configuration:
+- Training Accuracy: ~98-99%
+- Validation Accuracy: ~95-97%
+- Test Accuracy: ~95-97%
 
-## 🤝 Contribuir
+Transfer learning models typically achieve 1-2% higher accuracy.
 
-Las contribuciones son bienvenidas! Por favor, abre un issue o pull request.
+## Advanced Features
 
-## 📄 Licencia
+### Multi-Object Detection
+
+```python
+from src.evaluation.multi_detector import MultiShapeDetector
+
+detector = MultiShapeDetector('models/best_model.h5')
+detections = detector.detect_shapes_contours(image, confidence_threshold=0.7)
+```
+
+### Custom Training Parameters
+
+```bash
+python train_model.py \
+    --model_type transfer \
+    --base_model efficientnet_b0 \
+    --epochs 100 \
+    --batch_size 16 \
+    --learning_rate 0.001 \
+    --dropout_rate 0.3
+```
+
+## API Endpoints
+
+- `GET /health` - Health check
+- `POST /predict` - Single image prediction
+- `POST /predict/batch` - Batch prediction
+- `GET /classes` - List available classes
+- `GET /model/info` - Model information
+
+## Contributing
+
+Contributions are welcome. Please open an issue or pull request.
+
+## License
 
 MIT License
 
-## 👨‍💻 Autor
+## Author
 
 Marcos Soto Maceda
