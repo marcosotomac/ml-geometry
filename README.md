@@ -56,9 +56,75 @@ docker-compose up -d
 
 ## Documentation
 
-- **[MLOps Guide](MLOPS.md)**: Complete MLOps implementation guide
-- **[Quick Start](QUICKSTART.md)**: Getting started tutorial
+- **[MLOPS.md](MLOPS.md)**: Complete MLOps implementation guide
+- **[MLOPS_SUMMARY.md](MLOPS_SUMMARY.md)**: MLOps features summary
+- **[QUICKSTART_MLOPS.md](QUICKSTART_MLOPS.md)**: Quick start for MLOps
+- **[QUICKSTART.md](QUICKSTART.md)**: Getting started tutorial
 - **[API Documentation](http://localhost:8000/docs)**: Interactive API documentation
+
+## MLOps Workflow
+
+```mermaid
+graph TB
+    subgraph Development
+        A[Train Model] --> B[MLflow Tracking]
+        B --> C[Model Registry]
+        C --> D{Model Ready?}
+    end
+    
+    subgraph Staging
+        D -->|Yes| E[Promote to Staging]
+        E --> F[Integration Tests]
+        F --> G{Tests Pass?}
+    end
+    
+    subgraph Production
+        G -->|Yes| H[Promote to Production]
+        H --> I[Deploy to K8s]
+        I --> J[Monitor with Prometheus]
+        J --> K[Grafana Dashboards]
+    end
+    
+    subgraph Monitoring
+        K --> L{Drift Detected?}
+        L -->|Yes| M[Alert & Retrain]
+        L -->|No| N[Continue Monitoring]
+        M --> A
+        N --> K
+    end
+    
+    style A fill:#e1f5ff
+    style B fill:#e1f5ff
+    style C fill:#e1f5ff
+    style E fill:#fff4e1
+    style F fill:#fff4e1
+    style H fill:#e1ffe1
+    style I fill:#e1ffe1
+    style J fill:#ffe1e1
+    style K fill:#ffe1e1
+```
+
+## Quick Commands
+
+```bash
+# Development
+make install          # Install all dependencies
+make train           # Train model with MLOps
+
+# Docker
+make docker-stack    # Start full MLOps stack
+
+# Deployment
+python deploy_model.py --model-name custom --version 1.0.0 --source-stage staging
+
+# Monitoring
+make mlflow          # Open MLflow UI (http://localhost:5000)
+make grafana         # Open Grafana (http://localhost:3000)
+
+# Testing
+make test           # Run all tests
+make lint           # Check code quality
+```
 
 ## Supported Shapes
 
