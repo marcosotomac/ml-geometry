@@ -1,0 +1,55 @@
+# Model Configuration
+model:
+  input_shape: [224, 224, 3]
+  num_classes: 10
+  architecture: "custom_cnn"  # Options: custom_cnn, efficientnet, resnet50, mobilenetv2
+  
+# Training Configuration
+training:
+  batch_size: 32
+  epochs: 100
+  initial_learning_rate: 0.001
+  optimizer: "adam"  # Options: adam, sgd, rmsprop
+  loss: "categorical_crossentropy"
+  
+# Data Augmentation
+augmentation:
+  rotation_range: 30
+  width_shift_range: 0.2
+  height_shift_range: 0.2
+  shear_range: 0.2
+  zoom_range: 0.2
+  horizontal_flip: true
+  vertical_flip: true
+  fill_mode: "nearest"
+  
+# Callbacks
+callbacks:
+  early_stopping:
+    patience: 15
+    restore_best_weights: true
+  reduce_lr:
+    factor: 0.5
+    patience: 5
+    min_lr: 0.00001
+  model_checkpoint:
+    save_best_only: true
+    
+# Dataset
+dataset:
+  train_split: 0.7
+  val_split: 0.15
+  test_split: 0.15
+  shapes:
+    - circle
+    - square
+    - rectangle
+    - triangle
+    - pentagon
+    - hexagon
+    - octagon
+    - star
+    - rhombus
+    - ellipse
+  samples_per_class: 1000
+  img_size: 224
