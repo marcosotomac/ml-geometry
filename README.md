@@ -90,6 +90,158 @@ python src/api/main.py
 
 Access interactive documentation at http://localhost:8000/docs
 
+## Workflow Diagram
+
+### Complete ML Pipeline
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    1. DATA GENERATION                           │
+│                                                                 │
+│  GeometricShapeGenerator                                        │
+│         │                                                       │
+│         ├─> Generate 10 shape classes                          │
+│         ├─> Apply augmentation (rotation, flip, noise, etc.)   │
+│         └─> Split: Train (70%) / Val (15%) / Test (15%)       │
+│                                                                 │
+│  Output: data/synthetic/                                        │
+│         ├── train/ (7000 images)                               │
+│         ├── val/ (1500 images)                                 │
+│         └── test/ (1500 images)                                │
+└─────────────────────────────────────────────────────────────────┘
+                            ↓
+┌─────────────────────────────────────────────────────────────────┐
+│                    2. DATA LOADING                              │
+│                                                                 │
+│  DataLoader                                                     │
+│         │                                                       │
+│         ├─> Load images from directories                       │
+│         ├─> Normalize (0-1 range)                             │
+│         ├─> Apply runtime augmentation (train only)            │
+│         └─> Create batches (default: 32)                       │
+└─────────────────────────────────────────────────────────────────┘
+                            ↓
+┌─────────────────────────────────────────────────────────────────┐
+│                    3. MODEL CREATION                            │
+│                                                                 │
+│  Choose Architecture:                                           │
+│         │                                                       │
+│         ├─> Custom CNN (ResNet blocks + Attention)             │
+│         ├─> Lightweight CNN (Fast training)                    │
+│         └─> Transfer Learning (EfficientNet, ResNet, etc.)     │
+│                                                                 │
+│  Model Components:                                              │
+│         ├─> Input: 224x224x3                                   │
+│         ├─> Feature Extraction: Conv layers + ResNet blocks    │
+│         ├─> Attention: Channel attention mechanism             │
+│         ├─> Pooling: Global Average Pooling                    │
+│         └─> Classification: Dense layers → Softmax (10 classes)│
+└─────────────────────────────────────────────────────────────────┘
+                            ↓
+┌─────────────────────────────────────────────────────────────────┐
+│                    4. TRAINING                                  │
+│                                                                 │
+│  Training Pipeline:                                             │
+│         │                                                       │
+│         ├─> Optimizer: Adam/SGD/RMSprop                        │
+│         ├─> Loss: Categorical Cross-Entropy                    │
+│         ├─> Metrics: Accuracy, Precision, Recall, Top-3        │
+│         │                                                       │
+│         ├─> Callbacks:                                         │
+│         │   ├─> Early Stopping (patience: 15)                 │
+│         │   ├─> Model Checkpoint (save best)                  │
+│         │   ├─> ReduceLROnPlateau (factor: 0.5)               │
+│         │   ├─> TensorBoard (visualization)                   │
+│         │   └─> CSV Logger (metrics history)                  │
+│         │                                                       │
+│         └─> Train for N epochs (default: 50-100)               │
+│                                                                 │
+│  Output: models/saved_models/                                   │
+│         ├── best_model.h5                                      │
+│         ├── model_config.json                                  │
+│         └── training_history.json                              │
+└─────────────────────────────────────────────────────────────────┘
+                            ↓
+┌─────────────────────────────────────────────────────────────────┐
+│                    5. EVALUATION                                │
+│                                                                 │
+│  ModelEvaluator:                                                │
+│         │                                                       │
+│         ├─> Generate predictions on test set                   │
+│         ├─> Calculate metrics:                                 │
+│         │   ├─> Overall accuracy                               │
+│         │   ├─> Per-class accuracy                             │
+│         │   ├─> Precision, Recall, F1-score                    │
+│         │   └─> Confusion matrix                               │
+│         │                                                       │
+│         └─> Create visualizations:                             │
+│             ├─> Confusion matrix heatmap                       │
+│             ├─> ROC curves (multi-class)                       │
+│             ├─> Precision-Recall curves                        │
+│             ├─> Training history plots                         │
+│             └─> Sample predictions with confidence             │
+│                                                                 │
+│  Output: results/                                               │
+│         ├── evaluation_results.json                            │
+│         ├── confusion_matrix.png                               │
+│         ├── roc_curves.png                                     │
+│         └── sample_predictions.png                             │
+└─────────────────────────────────────────────────────────────────┘
+                            ↓
+┌─────────────────────────────────────────────────────────────────┐
+│                    6. DEPLOYMENT                                │
+│                                                                 │
+│  Option A: Direct Prediction                                    │
+│         │                                                       │
+│         └─> ShapePredictor.predict(image)                      │
+│             └─> Returns: {class, confidence, probabilities}    │
+│                                                                 │
+│  Option B: REST API                                             │
+│         │                                                       │
+│         ├─> FastAPI Server (port 8000)                         │
+│         ├─> Endpoints:                                         │
+│         │   ├─> POST /predict (single image)                  │
+│         │   ├─> POST /predict/batch (multiple images)         │
+│         │   ├─> GET /classes (available classes)              │
+│         │   └─> GET /health (API status)                      │
+│         └─> Returns: JSON with predictions                     │
+│                                                                 │
+│  Option C: Multi-Object Detection                               │
+│         │                                                       │
+│         └─> MultiShapeDetector                                 │
+│             ├─> Method 1: Sliding Window                       │
+│             ├─> Method 2: Region Proposals (Selective Search)  │
+│             └─> Method 3: Contour Detection                    │
+│             └─> Returns: List of {class, bbox, confidence}     │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### Inference Flow
+
+```
+Input Image (any size)
+        ↓
+Preprocessing
+    ├─> Resize to 224x224
+    ├─> Normalize (0-1)
+    └─> Convert to tensor
+        ↓
+Model Forward Pass
+    ├─> Feature extraction
+    ├─> Channel attention
+    └─> Classification head
+        ↓
+Post-processing
+    ├─> Softmax activation
+    ├─> Get argmax (predicted class)
+    └─> Extract confidence scores
+        ↓
+Output
+    ├─> Class name (e.g., "circle")
+    ├─> Confidence (0.0-1.0)
+    └─> All probabilities (optional)
+```
+
 ## Model Architecture
 
 ```
